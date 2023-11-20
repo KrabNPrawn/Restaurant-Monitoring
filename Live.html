@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    .tableContainer {
+      text-align: center;
+      display: inline-block;
+      margin: 10px;
+    }
+
+    .tableImage {
+      width: 200px;
+      height: 200px;
+      transition: background-color 0.5s ease;
+    }
+
+    .button {
+      margin-top: 10px;
+      padding: 10px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .stopwatch {
+      font-size: 20px;
+      margin-top: 10px;
+    }
+  </style>
+  <script>
+    let tableStates = [];
+
+function initializeTables() {
+  const numTables = 3; // Change this to the actual number of tables
+  for (let i = 0; i < numTables; i++) {
+    tableStates[i] = {
+      isGreen: false,
+      stopwatch: null,
+    };
+  }
+}
+
+    function toggleTable(tableIndex) {
+      const tableState = tableStates[tableIndex];
+      const tableImage = document.getElementById(`tableImage${tableIndex}`);
+      const button = document.getElementById(`button${tableIndex}`);
+      const stopwatchElement = document.getElementById(`stopwatch${tableIndex}`);
+
+      if (tableState.isGreen) {
+        clearInterval(tableState.stopwatch);
+        stopwatchElement.innerText = '00:00:00';
+        tableImage.src = '1.png'; // Replace with your default image path
+        button.innerText = `Table ${tableIndex + 1}`;
+        tableState.isGreen = false;
+      } else {
+        let seconds = 0;
+        tableState.stopwatch = setInterval(function () {
+          seconds++;
+          const hours = Math.floor(seconds / 3600);
+          const minutes = Math.floor((seconds % 3600) / 60);
+          const remainingSeconds = seconds % 60;
+          stopwatchElement.innerText = `${hours}:${minutes}:${remainingSeconds}`;
+        }, 1000);
+        tableImage.src = '2.png'; // Replace with your green image path
+        button.innerText = ` Table ${tableIndex + 1}`;
+        tableState.isGreen = true;
+      }
+
+      // Broadcast the table state to other instances
+      const channel = new BroadcastChannel('tableSyncChannel');
+      channel.postMessage({ tableIndex, isGreen: tableState.isGreen });
+    }
+
+    // Listen for updates from other instances
+    const channel = new BroadcastChannel('tableSyncChannel');
+    channel.onmessage = function (event) {
+      const { tableIndex, isGreen } = event.data;
+      const tableState = tableStates[tableIndex];
+      const tableImage = document.getElementById(`tableImage${tableIndex}`);
+      const button = document.getElementById(`button${tableIndex}`);
+      const stopwatchElement = document.getElementById(`stopwatch${tableIndex}`);
+
+      if (isGreen !== tableState.isGreen) {
+        if (isGreen) {
+          // Start stopwatch
+          let seconds = 0;
+          tableState.stopwatch = setInterval(function () {
+            seconds++;
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const remainingSeconds = seconds % 60;
+            stopwatchElement.innerText = `${hours}:${minutes}:${remainingSeconds}`;
+          }, 1000);
+          // Change image to the green version
+          tableImage.src = '2.png'; // Replace with your green image path
+          button.innerText = ` Table ${tableIndex + 1}`;
+        } else {
+          // Reset stopwatch
+          clearInterval(tableState.stopwatch);
+          stopwatchElement.innerText = '00:00:00';
+          // Change image back to default
+          tableImage.src = '1.png'; // Replace with your default image path
+          button.innerText = `Table ${tableIndex + 1}`;
+        }
+        tableState.isGreen = isGreen;
+      }
+    };
+  </script>
+</head>
+<body onload="initializeTables()">
+
+  <div id="tablesContainer">
+    <!-- Create a 3x3 grid of tables -->
+    <div class="tableContainer">
+      <img id="tableImage0" class="tableImage" src="1.png" alt="Table Image">
+      <div id="stopwatch0" class="stopwatch">00:00:00</div>
+      <button id="button0" class="button" onclick="toggleTable(0)">Table 1</button>
+    </div>
+
+    <div class="tableContainer">
+      <img id="tableImage1" class="tableImage" src="1.png" alt="Table Image">
+      <div id="stopwatch1" class="stopwatch">00:00:00</div>
+      <button id="button1" class="button" onclick="toggleTable(1)">Table 2</button>
+    </div>
+
+    <div class="tableContainer">
+      <img id="tableImage2" class="tableImage" src="1.png" alt="Table Image">
+      <div id="stopwatch2" class="stopwatch">00:00:00</div>
+      <button id="button2" class="button" onclick="toggleTable(2)">Table 3</button>
+    </div>
+
+    <!-- Repeat the above block for the remaining rows (3-8) -->
+
+  </div>
+
+</body>
+</html>
+
+
+
